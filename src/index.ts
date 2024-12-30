@@ -11,16 +11,34 @@ const client = setupDiscordClient();
 
 client.login(process.env.BOT_TOKEN);
 
-// Add HTTP server
+// Add HTTP server with health check
 const server = http.createServer((req, res) => {
-  res.writeHead(200);
-  res.end('Discord bot is running!');
+  if (req.url === '/health') {
+    res.writeHead(200);
+    res.end('OK');
+  } else {
+    res.writeHead(200);
+    res.end('Discord bot is running!');
+  }
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Keep alive mechanism
+setInterval(() => {
+  http.get(`http://localhost:${PORT}/health`, (resp) => {
+    let data = '';
+    resp.on('data', (chunk) => { data += chunk; });
+    resp.on('end', () => {
+      console.log("Keep alive ping successful");
+    });
+  }).on('error', (err) => {
+    console.log("Keep alive ping failed: " + err.message);
+  });
+}, 5 * 60 * 1000); // Ping every 5 minutes
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;

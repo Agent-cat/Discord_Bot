@@ -4,6 +4,9 @@ services:
     env: node
     buildCommand: npm install
     startCommand: npm start
+    healthCheckPath: /health
+    healthCheckTimeout: 100
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 18.x
