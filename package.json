@@ -5,7 +5,8 @@
   "scripts": {
     "prebuild": "rm -rf dist && mkdir dist",
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
+    "start": "node dist/index.js",
+    "postinstall": "npm run build",
     "dev": "nodemon --exec ts-node src/index.ts",
     "deploy-commands": "ts-node src/Command.ts"
   },
