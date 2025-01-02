@@ -1,44 +1,42 @@
 import { Client, Events, Interaction } from "discord.js";
 import { config } from "dotenv";
+import express from 'express';
 import { setupDiscordClient } from "./config/discord";
 import { handlePingCommand } from "./commands/ping";
 import { handleCodeCommand } from "./commands/code";
-import http from 'http';
+import axios from 'axios';
 
 config();
 
+const app = express();
 const client = setupDiscordClient();
 
 client.login(process.env.BOT_TOKEN);
 
-// Add HTTP server with health check
-const server = http.createServer((req, res) => {
-  if (req.url === '/health') {
-    res.writeHead(200);
-    res.end('OK');
-  } else {
-    res.writeHead(200);
-    res.end('Discord bot is running!');
-  }
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/', (req, res) => {
+  res.status(200).send('Discord bot is running!');
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-// Keep alive mechanism
-setInterval(() => {
-  http.get(`http://localhost:${PORT}/health`, (resp) => {
-    let data = '';
-    resp.on('data', (chunk) => { data += chunk; });
-    resp.on('end', () => {
+setInterval(async () => {
+  try {
+    const response = await axios.get(`https://discord-bot-x6gq.onrender.com/health`);
+    if (response.status === 200) {
       console.log("Keep alive ping successful");
-    });
-  }).on('error', (err) => {
-    console.log("Keep alive ping failed: " + err.message);
-  });
-}, 5 * 60 * 1000); // Ping every 5 minutes
+    }
+  } catch (err: unknown) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    console.log("Keep alive ping failed: " + errorMessage);
+  }
+}, 5 * 60 * 1000);
 
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (!interaction.isChatInputCommand()) return;
